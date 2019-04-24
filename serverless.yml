@@ -1,0 +1,21 @@
+service:
+  name: aws-nodejs
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: ap-northeast-2
+
+functions:
+  CropImage:
+    handler: main.uploadImage
+    events:
+      - http:
+          method: post
+          path: uploadImage
+          cors: true
+    package:
+      include:
+        - main.ts
+      exclude:
+        - node_modules/**

@@ -1,0 +1,20 @@
+{
+  "name": "typescript-lambda",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.24",
+    "@types/sharp": "^0.22.1",
+    "serverless-offline": "^4.9.4",
+    "serverless-plugin-typescript": "^1.1.7"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.441.0",
+    "sharp": "^0.22.0"
+  }
+}
