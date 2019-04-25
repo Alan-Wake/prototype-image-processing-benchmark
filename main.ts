@@ -41,40 +41,44 @@ export const parseBase64Buffer = (body: any): Buffer => {
   return new Buffer(body.replace(/^data:image\/\w+;base64,/, ""), 'base64');
 }
 
-export const crop = async (buckerName: string, key: string, contentType: string, image: Sharp.Sharp, preset: IPreset): Promise<any> => {
-  const croppedImage = await image.extract({ ...preset }).toFormat('png').toBuffer();
-  return upload(buckerName, key, croppedImage, contentType);
+export const flatten = (arr: any, depth = 1) =>
+  arr.reduce((a: any, v: any) => a.concat(depth > 1 && Array.isArray(v) ? flatten(v, depth - 1) : v), []);
+
+export const crop = (image: Sharp.Sharp, preset: IPreset): Promise<Buffer> => {
+  return image.extract({ ...preset }).toFormat('png').toBuffer();
 }
 
-export const uploadImage : Handler = async (event : any, context : Context, cb : any) => {
+export const uploadImage: Handler = async (event: any, context: Context, cb: any) => {
 
-  const { name , type , body , BucketName , contentType } = event;
-  const buf = new Buffer(body.replace(/^data:image\/\w+;base64,/, ""),'base64')
+  const { name, type, body, BucketName, contentType } = event;
+  const buf = new Buffer(body.replace(/^data:image\/\w+;base64,/, ""), 'base64')
 
-  try{
+  try {
 
     upload(BucketName, `${name}.${type}`, buf, contentType);
-    const file = await download(BucketName,  `${name}.${type}`);
+    const file = await download(BucketName, `${name}.${type}`);
     const idata = Sharp(file.Body);
     const metadata = await idata.metadata();
     const n = 100;
-    const preset: IPreset[][] = [ ...Array(n).keys() ].map( x => {
-      return [ ...Array(n).keys() ].map( y => {
-        return  {
-          top   : Math.floor( metadata.height as number / n ) * x,
-          left  : Math.floor( metadata.width  as number / n ) * y,
-          width : Math.floor( metadata.width  as number / n ),
-          height: Math.floor( metadata.height as number / n ) 
+    const presets: IPreset[][] = [...Array(n).keys()].map(x => {
+      return [...Array(n).keys()].map(y => {
+        return {
+          top: Math.floor(metadata.height as number / n) * x,
+          left: Math.floor(metadata.width as number / n) * y,
+          width: Math.floor(metadata.width as number / n),
+          height: Math.floor(metadata.height as number / n)
         }
       })
-    });
-    await Promise.all( await preset.map(( props, x )  => { return Promise.all ( props.map(( prop , y )=> { return crop( BucketName, `${name}-${Date()}-${x}-${y}.${type}`, contentType, idata, prop )}))}));
+    })
+
+    await Promise.all(flatten(presets).map(async (p: IPreset, i: number) => {
+      const croppedBuffer = await crop(idata, p);
+      return upload(BucketName, `${name}-${Date()}-${i}.${type}`, croppedBuffer, contentType);
+    }))
 
     cb(null, buildRespose(undefined, "Uploaded", 200));
 
-  }catch(e){
-
-    cb(null, buildRespose(e.message, "Error", 520));
-  
+  } catch (e) {
+    cb(null, buildRespose(e.message, "Error", 520))
   }
 }
