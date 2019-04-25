@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # prototype-image-processing-benchmark
 
 ## Todo
@@ -38,6 +37,3 @@
     1. 이미지 사이즈 1000 * 1000 미만 png  
         * Duration: 5547.17 ms	Billed Duration: 5600 ms 	Memory Size: 1024 MB	Max Memory Used: 190 MB
 
-=======
-# prototype-image-processing-benchmark
->>>>>>> a082775386e37b6418453aad471ef2828ae090a3
