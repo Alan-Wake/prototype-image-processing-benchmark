@@ -42,7 +42,6 @@ export const parseBase64Buffer = (body: any): Buffer => {
 }
 
 export const crop = (image: Sharp.Sharp, preset: IPreset): Promise<Buffer> => {
-  console.log(preset);
   return image.extract({ ...preset }).toFormat('png').toBuffer();
 }
 
@@ -62,8 +61,8 @@ export const uploadImage : Handler = async (event : any, context : Context, cb :
       return [ ...Array(n).keys() ].map( y => {
         return  {
           top   : Math.floor( metadata.height as number / n ) * x,
-          left  : Math.floor( metadata.width as number  / n ) * y,
-          width : Math.floor( metadata.width as number  / n ),
+          left  : Math.floor( metadata.width  as number / n ) * y,
+          width : Math.floor( metadata.width  as number / n ),
           height: Math.floor( metadata.height as number / n ) 
         }
       })
