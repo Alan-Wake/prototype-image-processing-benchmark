@@ -18,8 +18,8 @@
     return {
         top   : Math.floor( metadata.height as number / n ) * x,
         left  : Math.floor( metadata.width as number  / n ) * x,
-        width : Math.floor( metadata.height as number / n ),
-        height: Math.floor( metadata.width as number  / n ) 
+        width : Math.floor( metadata.width as number  / n ),
+        height: Math.floor( metadata.height as number / n ) 
     }
     ```
 
