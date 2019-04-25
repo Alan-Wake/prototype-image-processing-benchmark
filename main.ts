@@ -42,7 +42,8 @@ export const parseBase64Buffer = (body: any): Buffer => {
 }
 
 export const crop = (image: Sharp.Sharp, preset: IPreset): Promise<Buffer> => {
- return image.extract({ ...preset }).toFormat('png').toBuffer();
+  console.log(preset);
+  return image.extract({ ...preset }).toFormat('png').toBuffer();
 }
 
 export const uploadImage : Handler = async (event : any, context : Context, cb : any) => {
@@ -56,18 +57,22 @@ export const uploadImage : Handler = async (event : any, context : Context, cb :
     const file = await download(BucketName,  `${name}.${type}`);
     const idata = Sharp(file.Body);
     const metadata = await idata.metadata();
-    const n = 100;
-    const preset: IPreset[] = [ ...Array(n).keys() ].map( x => {
-      return {
-        top   : Math.floor( metadata.height as number / n ) * x,
-        left  : Math.floor( metadata.width as number  / n ) * x,
-        width : Math.floor( metadata.height as number / n ),
-        height: Math.floor( metadata.width as number  / n ) 
-      }
+    const n = 10;
+    const preset: IPreset[][] = [ ...Array(n).keys() ].map( x => {
+      return [ ...Array(n).keys() ].map( y => {
+        return  {
+          top   : Math.floor( metadata.height as number / n ) * x,
+          left  : Math.floor( metadata.width as number  / n ) * y,
+          width : Math.floor( metadata.width as number  / n ),
+          height: Math.floor( metadata.height as number / n ) 
+        }
+      })
     })
-    const cropBufferArray = await Promise.all( await preset.map( prop => { return crop(idata, prop) }));
-    cropBufferArray.map(( cropBuffer, index) => {
-      upload(BucketName, `${name}-${Date()}-${index}.${type}`, cropBuffer, contentType);
+    const cropBufferArray = await Promise.all( await preset.map( props => { return Promise.all ( props.map( prop => {  return crop( idata, prop ) } ) ) } ) );
+    cropBufferArray.map(( cropBuffers, x) => {
+      cropBuffers.map((cropBuffer , y) => { 
+        upload(BucketName, `${name}-${Date()}-${x}-${y}.${type}`, cropBuffer, contentType);
+      })
     })
 
     cb(null, buildRespose(undefined, "Uploaded", 200));
