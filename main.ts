@@ -41,8 +41,9 @@ export const parseBase64Buffer = (body: any): Buffer => {
   return new Buffer(body.replace(/^data:image\/\w+;base64,/, ""), 'base64');
 }
 
-export const crop = (image: Sharp.Sharp, preset: IPreset): Promise<Buffer> => {
-  return image.extract({ ...preset }).toFormat('png').toBuffer();
+export const crop = async (buckerName: string, key: string, contentType: string, image: Sharp.Sharp, preset: IPreset): Promise<any> => {
+  const croppedImage = await image.extract({ ...preset }).toFormat('png').toBuffer();
+  return upload(buckerName, key, croppedImage, contentType);
 }
 
 export const uploadImage : Handler = async (event : any, context : Context, cb : any) => {
@@ -56,7 +57,7 @@ export const uploadImage : Handler = async (event : any, context : Context, cb :
     const file = await download(BucketName,  `${name}.${type}`);
     const idata = Sharp(file.Body);
     const metadata = await idata.metadata();
-    const n = 10;
+    const n = 100;
     const preset: IPreset[][] = [ ...Array(n).keys() ].map( x => {
       return [ ...Array(n).keys() ].map( y => {
         return  {
@@ -66,17 +67,14 @@ export const uploadImage : Handler = async (event : any, context : Context, cb :
           height: Math.floor( metadata.height as number / n ) 
         }
       })
-    })
-    const cropBufferArray = await Promise.all( await preset.map( props => { return Promise.all ( props.map( prop => {  return crop( idata, prop ) } ) ) } ) );
-    cropBufferArray.map(( cropBuffers, x) => {
-      cropBuffers.map((cropBuffer , y) => { 
-        upload(BucketName, `${name}-${Date()}-${x}-${y}.${type}`, cropBuffer, contentType);
-      })
-    })
+    });
+    await Promise.all( await preset.map(( props, x )  => { return Promise.all ( props.map(( prop , y )=> { return crop( BucketName, `${name}-${Date()}-${x}-${y}.${type}`, contentType, idata, prop )}))}));
 
     cb(null, buildRespose(undefined, "Uploaded", 200));
 
   }catch(e){
-    cb(null, buildRespose(e.message, "Error", 520))
+
+    cb(null, buildRespose(e.message, "Error", 520));
+  
   }
 }
