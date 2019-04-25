@@ -9,6 +9,7 @@ provider:
 functions:
   CropImage:
     handler: main.uploadImage
+    timeout: 45
     events:
       - http:
           method: post
