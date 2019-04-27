@@ -15,6 +15,6 @@
   },
   "dependencies": {
     "aws-sdk": "^2.441.0",
-    "sharp": "^0.22.0"
+    "sharp": "^0.22.1"
   }
 }
