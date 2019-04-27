@@ -1,10 +1,11 @@
 service:
-  name: aws-nodejs
+  name: image-crop
 
 provider:
   name: aws
   runtime: nodejs8.10
   region: ap-northeast-2
+  memorySize: 3008
 
 functions:
   CropImage:
