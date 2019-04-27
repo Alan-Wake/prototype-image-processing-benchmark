@@ -33,8 +33,8 @@ export const upload = (bucketName: string, key: string, buffer: Buffer, contentT
   }).promise();
 }
 
-export const download = (bucketName: string, key: string): Promise<any> => {
-  return s3.getObject({ Bucket: bucketName, Key: key }).promise();
+export const download = async (bucketName: string, key: string): Promise<any> => {
+  return await s3.getObject({ Bucket: bucketName, Key: key }).promise();
 }
 
 export const parseBase64Buffer = (body: any): Buffer => {
@@ -44,41 +44,40 @@ export const parseBase64Buffer = (body: any): Buffer => {
 export const flatten = (arr: any, depth = 1) =>
   arr.reduce((a: any, v: any) => a.concat(depth > 1 && Array.isArray(v) ? flatten(v, depth - 1) : v), []);
 
-export const crop = (image: Sharp.Sharp, preset: IPreset): Promise<Buffer> => {
-  return image.extract({ ...preset }).toFormat('png').toBuffer();
+export const crop = async (image: Sharp.Sharp, preset: IPreset): Promise<Buffer> => {
+  try{
+    const retImage = await image.extract({ ...preset }).toBuffer();
+    await Sharp.cache(false);
+    return retImage;
+  }catch(e){
+    throw new Error(e);
+  }
 }
 
 export const uploadImage: Handler = async (event: any, context: Context, cb: any) => {
-
-  const { name, type, body, BucketName, contentType } = event;
-  const buf = new Buffer(body.replace(/^data:image\/\w+;base64,/, ""), 'base64')
+  const { x, y, name } = event;
 
   try {
-
-    upload(BucketName, `${name}.${type}`, buf, contentType);
-    const file = await download(BucketName, `${name}.${type}`);
-    const idata = Sharp(file.Body);
+    const file = await download('alanwake',name);
+    await Sharp.cache(false);
+    const idata = await Sharp(file.Body).sequentialRead(true).limitInputPixels(0);
     const metadata = await idata.metadata();
-    const n = 100;
-    const presets: IPreset[][] = [...Array(n).keys()].map(x => {
-      return [...Array(n).keys()].map(y => {
+    const presets: IPreset[][] = [...Array(x).keys()].map(_x => {
+      return [...Array(y).keys()].map(_y => {
         return {
-          top: Math.floor(metadata.height as number / n) * x,
-          left: Math.floor(metadata.width as number / n) * y,
-          width: Math.floor(metadata.width as number / n),
-          height: Math.floor(metadata.height as number / n)
+          top: Math.floor(metadata.height as number / x) * _x,
+          left: Math.floor(metadata.width as number / y) * _y,
+          width: Math.floor(metadata.width as number / y),
+          height: Math.floor(metadata.height as number / x)
         }
       })
-    })
+    });
 
-    await Promise.all(flatten(presets).map(async (p: IPreset, i: number) => {
-      const croppedBuffer = await crop(idata, p);
-      return upload(BucketName, `${name}-${Date()}-${i}.${type}`, croppedBuffer, contentType);
-    }))
-
-    cb(null, buildRespose(undefined, "Uploaded", 200));
+    const result = await Promise.all(flatten(presets).map(async (p: IPreset) => await crop(idata, p)));
+    cb(null, buildRespose(null, "Cropped", 200));
 
   } catch (e) {
     cb(null, buildRespose(e.message, "Error", 520))
   }
 }
+
