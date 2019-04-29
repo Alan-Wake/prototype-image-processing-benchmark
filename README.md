@@ -15,11 +15,11 @@
 
 ## Benchmark
 
-- Crop할 이미지는 S3에 저장된 이미지를 Fetch 하였습니다.
-- Image fetch time은 process.hrtiome()을 이용하여 체크하였습니다.
-- 이미지를 rows는 10으로 고정, cols 를 [10, 20, 30, 40, 50] 으로 변경하여 Crop하여 보았습니다.
+- Crop할 대상 이미지는 S3에 저장된 이미지를 Fetch 하여 사용하였습니다.
+- Image fetch time은 process.hrtime()을 이용하여 체크하였습니다.
+- 이미지를 rows는 10으로 고정, cols를 [10, 20, 30, 40, 50] 으로 변경하여 Crop 하여 보았습니다.
 - Lambda hot, cold 상태를 고려하여 케이스별 테스트는 8회를 실행하였고 후자 5회를 기록하였습니다.
-- Time 의 단위는 ms 입니다.
+- Time의 단위는 ms 입니다.
 - [Chart (Billed)](https://jsfiddle.net/alanwake/bd9fk50c/23/)
 
 1. 이미지 1 ( Size : 10000 x 10000, 1.2MB, JPEG )
