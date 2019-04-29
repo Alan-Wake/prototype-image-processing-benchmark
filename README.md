@@ -15,12 +15,17 @@
 
 ## Benchmark
 
-- Crop할 대상 이미지는 S3에 저장된 이미지를 Fetch 하여 사용하였습니다.
+- Benchmark 대상 이미지는 S3에 저장된 이미지를 Fetch 하여 사용하였습니다.
+- Benchmark 대상 이미지는 픽셀 사이즈 10000 x 10000, 1.2Mb, JPEG 포맷 이미지와 픽셀 사이즈 15360 × 8640, 12.5Mb, JPEG 포맷 이미지, 총 2케이스입니다.
 - Image fetch time은 process.hrtime()을 이용하여 체크하였습니다.
 - 이미지를 rows는 10으로 고정, cols를 [10, 20, 30, 40, 50] 으로 변경하여 Crop 하여 보았습니다.
 - Lambda hot, cold 상태를 고려하여 케이스별 테스트는 8회를 실행하였고 후자 5회를 기록하였습니다.
 - Time의 단위는 ms 입니다.
 - [Chart (Billed)](https://jsfiddle.net/alanwake/bd9fk50c/23/)
+
+- 자료
+    - [이미지1](https://s3.ap-northeast-2.amazonaws.com/alanwake/Upload/blackwhite.jpg)
+    - [이미지2](https://s3.ap-northeast-2.amazonaws.com/alanwake/Upload/16k.jpg)
 
 1. 이미지 1 ( Size : 10000 x 10000, 1.2MB, JPEG )
 
@@ -137,3 +142,11 @@
     |  5  | 258.99 | 93319.87 | 93400 | 2981 |
     | Avg | 257.19 | 93096.94 | 93200(93140) | 2898.6 |
 
+## 성능개선
+
+- sharp.js를 뜯어본 결과 sharp.js는 sharp.node라는 libvips 라이브러리를 사용하는 c++로 만들어진 모듈의 인터페이스와 이벤트 루프를 제공하는 역할을 할 뿐 직접적으로 이미지 프로세싱을 하지 않는다는 것을 알 수 있었습니다.
+    - 부가설명: Sharp.extract() 함수는 사실상 Sharp 오브젝트에 postTopOffset, postLeftOffset, postWidth, postHeight 값을 설정하고. toFile이나 toBuffer로 output 포맷을 설정하여 최종적으로 ._pipeline()을 호출하여 프로세싱 모듈을 콜 합니다.
+    - 참조
+        - [Sharp.node](https://github.com/lovell/sharp/blob/05d76eeadfe54713606a615185b2da047923406b/lib/output.js#L4)
+        - [Sharpjs._pipeline](https://github.com/lovell/sharp/blob/05d76eeadfe54713606a615185b2da047923406b/lib/output.js#L613)
+- 이미지 프로세싱의 성능을 개선하기 위한 방안으론 sharp.js 를 fork 하여 c++ 로 짜여진 코드를 수정 (extract 를 extractMultiple로 구현) 한 후 빌드하여 사용하는 방안이 있을거 같습니다.
