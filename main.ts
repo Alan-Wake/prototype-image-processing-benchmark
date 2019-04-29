@@ -41,9 +41,7 @@ export const uploadImage: Handler = async (event: any, context: Context, cb: Cal
   const { cols, rows, name } = event;
 
   try {
-    const hrstart = await process.hrtime();
     const file = await download('alanwake',name);
-    const hrend = await process.hrtime(hrstart);
     await Sharp.cache(false);
     const idata = await Sharp(file.Body).sequentialRead(true).limitInputPixels(0);
     const metadata = await idata.metadata();
@@ -59,7 +57,6 @@ export const uploadImage: Handler = async (event: any, context: Context, cb: Cal
     });
 
     const result = await Promise.all(flatten(presets).map((p: IPreset) => crop(idata, p)));
-    await console.log("Image Fetch time (hrtime): ", hrend[1]/1000000 ,'ms');
     cb(null, buildRespose(null, "Cropped", 200));
 
   } catch (e) {
